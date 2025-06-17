@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Circle, Lightbulb, Search, Users, TrendingUp, BookOpen, ArrowRight } from "lucide-react";
+import { CheckCircle, Circle, Lightbulb, Search, Users, TrendingUp, BookOpen, ArrowRight, Clock } from "lucide-react";
 
 interface IdeationStageProps {
   completedTasks: Set<string>;
