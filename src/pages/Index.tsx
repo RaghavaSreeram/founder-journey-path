@@ -1,13 +1,13 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Lightbulb, TrendingUp, Rocket, Users } from "lucide-react";
+import { ArrowRight, Lightbulb, TrendingUp, Rocket, Users, MessageCircle } from "lucide-react";
 import JourneyAssessment from "@/components/JourneyAssessment";
 import Dashboard from "@/components/Dashboard";
 import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PersonalizedDashboard from "@/components/PersonalizedDashboard";
+import AIFounderChat from "@/components/AIFounderChat";
 
 interface FounderProfile {
   name: string;
@@ -31,6 +31,7 @@ const Index = () => {
   const [currentStage, setCurrentStage] = useState<string | null>(null);
   const [showAssessment, setShowAssessment] = useState(false);
   const [showEnhancedOnboarding, setShowEnhancedOnboarding] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [founderProfile, setFounderProfile] = useState<FounderProfile | null>(null);
 
   const stages = [
@@ -99,6 +100,10 @@ const Index = () => {
     );
   }
 
+  if (showAIChat) {
+    return <AIFounderChat onBack={() => setShowAIChat(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Hero Section */}
@@ -118,11 +123,20 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={() => setShowEnhancedOnboarding(true)}
+              onClick={() => setShowAIChat(true)}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              Create Your Founder Profile
+              <MessageCircle className="mr-2 h-5 w-5" />
+              Chat with AI Startup Buddy
               <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => setShowEnhancedOnboarding(true)}
+              className="border-2 border-purple-200 text-purple-700 hover:bg-purple-50 px-8 py-3 rounded-xl font-semibold transition-all duration-300"
+            >
+              Create Founder Profile
             </Button>
             <Button 
               variant="outline" 
@@ -249,11 +263,20 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={() => setShowEnhancedOnboarding(true)}
+              onClick={() => setShowAIChat(true)}
               className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              Start Your Personalized Journey
+              <MessageCircle className="mr-2 h-5 w-5" />
+              Chat with AI Startup Buddy
               <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => setShowEnhancedOnboarding(true)}
+              className="border-2 border-white text-white hover:bg-white hover:text-purple-600 px-8 py-3 rounded-xl font-semibold transition-all duration-300"
+            >
+              Create Founder Profile
             </Button>
             <Button 
               size="lg" 
