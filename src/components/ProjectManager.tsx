@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Rocket, TrendingUp, Lightbulb, Target, DollarSign, BarChart3 } from "lucide-react";
+import { Plus, Rocket, TrendingUp, Lightbulb, Target, DollarSign, BarChart3, Activity } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { StartupProject } from "@/types/project";
+import ProjectHealthDashboard from "@/components/ProjectHealthDashboard";
 
 const ProjectManager = () => {
   const { projects, currentProject, createProject, selectProject } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showHealthDashboard, setShowHealthDashboard] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -62,13 +63,29 @@ const ProjectManager = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Your Startup Projects</h2>
-          <p className="text-gray-600">Manage and track your entrepreneurial ventures</p>
+          <p className="text-gray-600">Manage and track your entrepreneurial ventures with AI-powered insights</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="bg-purple-600 hover:bg-purple-700">
-          <Plus className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
+        <div className="flex gap-2">
+          {currentProject && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowHealthDashboard(!showHealthDashboard)}
+              className="flex items-center gap-2"
+            >
+              <Activity className="h-4 w-4" />
+              {showHealthDashboard ? 'Hide' : 'Show'} Health
+            </Button>
+          )}
+          <Button onClick={() => setShowCreateDialog(true)} className="bg-purple-600 hover:bg-purple-700">
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
+        </div>
       </div>
+
+      {showHealthDashboard && currentProject && (
+        <ProjectHealthDashboard project={currentProject} />
+      )}
 
       {projects.length === 0 ? (
         <Card className="text-center py-12">

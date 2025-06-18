@@ -1,12 +1,12 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Send, Bot, User, Lightbulb, TrendingUp, Target } from "lucide-react";
+import { ArrowLeft, Send, Bot, User, Lightbulb, TrendingUp, Target, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProjects } from "@/hooks/useProjects";
+import { StageDetectionEngine } from "@/utils/stageDetection";
 
 interface Message {
   id: string;
@@ -34,6 +34,7 @@ const AIFounderChat = ({ onBack }: AIFounderChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [stageDetectionEnabled, setStageDetectionEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -117,32 +118,29 @@ const AIFounderChat = ({ onBack }: AIFounderChatProps) => {
     const insights: string[] = [];
     let updatedProject = { ...project };
 
+    // Run stage detection analysis
+    if (stageDetectionEnabled && messages.length > 0) {
+      const detection = StageDetectionEngine.analyzeConversation(
+        [...messages, { content: message, type: 'user' }],
+        project
+      );
+
+      if (detection.shouldUpdate) {
+        updatedProject.stage = detection.suggestedStage;
+        insights.push(`Stage updated to ${detection.suggestedStage} (${Math.round(detection.confidence * 100)}% confidence)`);
+        
+        if (detection.reasoning.length > 0) {
+          insights.push(`Reasoning: ${detection.reasoning.join(', ')}`);
+        }
+      }
+    }
+
     // Detect progress indicators
     if (lowerMessage.includes('completed') || lowerMessage.includes('finished') || lowerMessage.includes('done')) {
       if (project.progress < 90) {
         updatedProject.progress = Math.min(project.progress + 10, 100);
         insights.push('Progress updated based on completed tasks');
       }
-    }
-
-    // Detect stage progression signals
-    const stageProgression: Record<string, string> = {
-      ideation: 'validation',
-      validation: 'mvp',
-      mvp: 'launch',
-      launch: 'revenue',
-      revenue: 'scale'
-    };
-
-    if (lowerMessage.includes('validated') && project.stage === 'ideation') {
-      updatedProject.stage = 'validation';
-      insights.push('Stage progressed to validation');
-    } else if (lowerMessage.includes('built') && lowerMessage.includes('mvp') && project.stage === 'validation') {
-      updatedProject.stage = 'mvp';
-      insights.push('Stage progressed to MVP development');
-    } else if (lowerMessage.includes('launched') && project.stage === 'mvp') {
-      updatedProject.stage = 'launch';
-      insights.push('Stage progressed to launch');
     }
 
     // Extract new action items
@@ -257,6 +255,24 @@ const AIFounderChat = ({ onBack }: AIFounderChatProps) => {
       };
     }
 
+    // Add project health insights
+    const healthAnalysis = StageDetectionEngine.analyzeProjectHealth(project);
+    
+    if (healthAnalysis.healthScore < 60) {
+      const healthInsights = healthAnalysis.insights.join(', ');
+      const recommendations = healthAnalysis.recommendations.slice(0, 2).join(' and ');
+      
+      return {
+        content: `I notice some areas where "${project.name}" could use attention. Health score: ${healthAnalysis.healthScore}/100. Key insights: ${healthInsights}. I recommend: ${recommendations}. What would you like to focus on to improve your project's momentum?`,
+        suggestions: [
+          "Review my project health",
+          "Update my progress",
+          "Prioritize next actions",
+          "Get specific recommendations"
+        ]
+      };
+    }
+
     // Context-aware general responses
     if (hasDiscussedTopic('team') || lowerMessage.includes('team') || lowerMessage.includes('hire')) {
       return {
@@ -270,12 +286,12 @@ const AIFounderChat = ({ onBack }: AIFounderChatProps) => {
       };
     }
 
-    // Default contextual response
+    // Default contextual response with stage detection insights
     return {
       content: `I'm here to help you with "${project.name}" at the ${stage} stage. ${project.nextActions.length > 0 ? `I notice you have ${project.nextActions.length} action items on your list. ` : ''}What specific challenge are you facing right now? I can provide tailored guidance based on your current progress and stage.`,
       suggestions: [
         "Review my next actions",
-        "Update my project progress",
+        "Update my project progress", 
         "Get stage-specific advice",
         "Plan next week's priorities"
       ]
@@ -305,12 +321,20 @@ const AIFounderChat = ({ onBack }: AIFounderChatProps) => {
     setIsLoading(true);
 
     try {
-      // Analyze project context and update if needed
+      // Enhanced project context analysis with stage detection
       const { updatedProject, contextInsights } = analyzeProjectContext(inputMessage, currentProject);
       
       // Update project if changes detected
       if (JSON.stringify(updatedProject) !== JSON.stringify(currentProject)) {
         updateProject(currentProject.id, updatedProject);
+        
+        // Show stage change notification
+        if (updatedProject.stage !== currentProject.stage) {
+          toast({
+            title: "Stage Updated!",
+            description: `Your project has progressed to the ${updatedProject.stage} stage.`,
+          });
+        }
       }
 
       // Generate contextual AI response
@@ -390,15 +414,23 @@ const AIFounderChat = ({ onBack }: AIFounderChatProps) => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 {currentProject.name} - AI Chat
               </h1>
-              <p className="text-gray-600">Your personalized startup guidance for this project</p>
+              <p className="text-gray-600">Your personalized startup guidance with intelligent stage detection</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Badge className="bg-purple-100 text-purple-700">
                 {currentProject.stage} stage
               </Badge>
               <Badge variant="outline">
                 {currentProject.progress}% complete
               </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStageDetectionEnabled(!stageDetectionEnabled)}
+                className={`text-xs ${stageDetectionEnabled ? 'text-green-600' : 'text-gray-400'}`}
+              >
+                {stageDetectionEnabled ? '🧠 AI Detection ON' : '🧠 AI Detection OFF'}
+              </Button>
             </div>
           </div>
         </div>
