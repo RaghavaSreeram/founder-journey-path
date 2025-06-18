@@ -11,11 +11,13 @@ import { Plus, Rocket, TrendingUp, Lightbulb, Target, DollarSign, BarChart3, Act
 import { useProjects } from "@/hooks/useProjects";
 import { StartupProject } from "@/types/project";
 import ProjectHealthDashboard from "@/components/ProjectHealthDashboard";
+import ProjectAssessment from "@/components/ProjectAssessment";
 
 const ProjectManager = () => {
   const { projects, currentProject, createProject, selectProject } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showHealthDashboard, setShowHealthDashboard] = useState(false);
+  const [showAssessment, setShowAssessment] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -45,18 +47,74 @@ const ProjectManager = () => {
 
   const handleCreateProject = () => {
     if (newProject.name.trim()) {
-      createProject(newProject);
-      setNewProject({
-        name: '',
-        description: '',
-        stage: 'ideation',
-        progress: 0,
-        nextActions: [],
-        tags: []
-      });
       setShowCreateDialog(false);
+      setShowAssessment(true);
     }
   };
+
+  const handleAssessmentComplete = (progress: number, nextActions: string[], additionalData: any) => {
+    const projectWithProgress = {
+      ...newProject,
+      progress,
+      nextActions,
+      // Store assessment data in tags for now (could be expanded to separate field)
+      tags: [...newProject.tags, `assessed-${Date.now()}`]
+    };
+    
+    createProject(projectWithProgress);
+    setNewProject({
+      name: '',
+      description: '',
+      stage: 'ideation',
+      progress: 0,
+      nextActions: [],
+      tags: []
+    });
+    setShowAssessment(false);
+  };
+
+  const handleAssessmentSkip = () => {
+    // Create project with default progress based on stage
+    const defaultProgress = {
+      ideation: 10,
+      validation: 25,
+      mvp: 45,
+      launch: 65,
+      revenue: 80,
+      scale: 90
+    };
+
+    const projectWithDefaultProgress = {
+      ...newProject,
+      progress: defaultProgress[newProject.stage],
+      nextActions: [`Complete ${newProject.stage} stage requirements`]
+    };
+    
+    createProject(projectWithDefaultProgress);
+    setNewProject({
+      name: '',
+      description: '',
+      stage: 'ideation',
+      progress: 0,
+      nextActions: [],
+      tags: []
+    });
+    setShowAssessment(false);
+  };
+
+  if (showAssessment) {
+    return (
+      <ProjectAssessment
+        project={newProject}
+        onComplete={handleAssessmentComplete}
+        onSkip={handleAssessmentSkip}
+        onBack={() => {
+          setShowAssessment(false);
+          setShowCreateDialog(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -92,7 +150,7 @@ const ProjectManager = () => {
           <CardContent>
             <Rocket className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No projects yet</h3>
-            <p className="text-gray-600 mb-6">Create your first startup project to get started</p>
+            <p className="text-gray-600 mb-6">Create your first startup project to get started with personalized progress tracking</p>
             <Button onClick={() => setShowCreateDialog(true)} className="bg-purple-600 hover:bg-purple-700">
               <Plus className="mr-2 h-4 w-4" />
               Create Your First Project
@@ -137,6 +195,12 @@ const ProjectManager = () => {
                         />
                       </div>
                     </div>
+                    {project.nextActions.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Next Action:</p>
+                        <p className="text-sm text-gray-700 truncate">{project.nextActions[0]}</p>
+                      </div>
+                    )}
                     {project.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {project.tags.slice(0, 3).map((tag, index) => (
@@ -164,7 +228,7 @@ const ProjectManager = () => {
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>
-              Start a new startup project and begin your entrepreneurial journey.
+              Start a new startup project and get personalized progress tracking based on your current situation.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -196,12 +260,12 @@ const ProjectManager = () => {
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ideation">Ideation</SelectItem>
-                  <SelectItem value="validation">Validation</SelectItem>
-                  <SelectItem value="mvp">MVP</SelectItem>
-                  <SelectItem value="launch">Launch</SelectItem>
-                  <SelectItem value="revenue">Revenue</SelectItem>
-                  <SelectItem value="scale">Scale</SelectItem>
+                  <SelectItem value="ideation">Ideation - Exploring and refining ideas</SelectItem>
+                  <SelectItem value="validation">Validation - Testing market demand</SelectItem>
+                  <SelectItem value="mvp">MVP - Building minimum viable product</SelectItem>
+                  <SelectItem value="launch">Launch - Going to market</SelectItem>
+                  <SelectItem value="revenue">Revenue - Generating income</SelectItem>
+                  <SelectItem value="scale">Scale - Growing the business</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -211,7 +275,7 @@ const ProjectManager = () => {
               Cancel
             </Button>
             <Button onClick={handleCreateProject} className="bg-purple-600 hover:bg-purple-700">
-              Create Project
+              Continue to Assessment
             </Button>
           </div>
         </DialogContent>
